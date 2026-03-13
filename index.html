@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Congressional Engagement Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --surface: #111418;
+    --surface2: #181c22;
+    --border: #232830;
+    --border2: #2e3540;
+    --text: #e8eaed;
+    --text2: #8b93a0;
+    --text3: #535d6b;
+    --accent: #4a9eff;
+    --accent-dim: #1a3a5c;
+    --green: #2ecc71;
+    --green-dim: #0d3320;
+    --amber: #f39c12;
+    --amber-dim: #3d2a08;
+    --red: #e74c3c;
+    --red-dim: #3d1010;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.6; min-height: 100vh; }
+  .grid-bg { position: fixed; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 40px 40px; opacity: 0.3; pointer-events: none; }
+  .container { max-width: 860px; margin: 0 auto; padding: 48px 24px 80px; position: relative; z-index: 1; }
+  header { border-bottom: 1px solid var(--border); padding-bottom: 28px; margin-bottom: 36px; }
+  .eyebrow { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; }
+  h1 { font-size: 26px; font-weight: 300; color: var(--text); letter-spacing: -0.02em; margin-bottom: 8px; }
+  h1 span { color: var(--accent); }
+  .tagline { font-size: 13px; color: var(--text2); font-family: var(--mono); }
+  .section-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); margin-bottom: 8px; }
+  .ctx-block { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px; margin-bottom: 20px; }
+  .ctx-block textarea { width: 100%; background: transparent; border: none; color: var(--text); font-family: var(--sans); font-size: 13px; line-height: 1.7; resize: none; outline: none; }
+  .input-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .input-row input { flex: 1; background: var(--surface); border: 1px solid var(--border2); color: var(--text); font-family: var(--sans); font-size: 13px; padding: 10px 14px; border-radius: 4px; outline: none; transition: border-color 0.15s; }
+  .input-row input:focus { border-color: var(--accent); }
+  .input-row input::placeholder { color: var(--text3); }
+  .input-row select { background: var(--surface); border: 1px solid var(--border2); color: var(--text); font-family: var(--sans); font-size: 13px; padding: 10px 14px; border-radius: 4px; outline: none; width: 160px; cursor: pointer; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+  .tag { font-family: var(--mono); font-size: 11px; padding: 4px 10px; border: 1px solid var(--border2); border-radius: 3px; color: var(--text2); cursor: pointer; transition: all 0.15s; background: transparent; }
+  .tag:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .gen-btn { width: 100%; padding: 13px; background: var(--accent); border: none; border-radius: 4px; color: #fff; font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: 0.05em; cursor: pointer; transition: opacity 0.15s; margin-bottom: 36px; }
+  .gen-btn:hover { opacity: 0.88; }
+  .gen-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .brief { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .brief-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+  .brief-name { font-size: 18px; font-weight: 400; color: var(--text); margin-bottom: 4px; }
+  .brief-role { font-size: 12px; color: var(--text2); font-family: var(--mono); }
+  .badges { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+  .badge { font-family: var(--mono); font-size: 10px; padding: 3px 8px; border-radius: 3px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .badge-d { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); }
+  .badge-r { background: var(--red-dim); color: var(--red); border: 1px solid var(--red); }
+  .badge-hi { background: var(--green-dim); color: var(--green); border: 1px solid var(--green); }
+  .badge-mid { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber); }
+  .badge-lo { background: var(--surface2); color: var(--text2); border: 1px solid var(--border2); }
+  .brief-body { padding: 24px; }
+  .brief-section { margin-bottom: 24px; }
+  .brief-section:last-child { margin-bottom: 0; }
+  .bslabel { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .bslabel::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .brief-section p { font-size: 13px; color: var(--text); line-height: 1.75; }
+  .brief-section ul { list-style: none; padding: 0; }
+  .brief-section ul li { font-size: 13px; color: var(--text); line-height: 1.7; padding: 6px 0 6px 20px; position: relative; border-bottom: 1px solid var(--border); }
+  .brief-section ul li:last-child { border-bottom: none; }
+  .brief-section ul li::before { content: '—'; position: absolute; left: 0; color: var(--text3); font-family: var(--mono); }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+  .ask-block { background: var(--accent-dim); border: 1px solid var(--accent); border-radius: 4px; padding: 16px; }
+  .ask-block p { font-size: 13px; color: var(--text); line-height: 1.75; }
+  .status { font-family: var(--mono); font-size: 12px; color: var(--text2); text-align: center; padding: 32px; }
+  .status.error { color: var(--red); }
+  .loading-dots::after { content: ''; animation: dots 1.2s steps(3, end) infinite; }
+  @keyframes dots { 0%, 20% { content: '.'; } 40% { content: '..'; } 60%, 100% { content: '...'; } }
+  footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border); font-family: var(--mono); font-size: 11px; color: var(--text3); text-align: center; }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+<div class="container">
+  <header>
+    <div class="eyebrow">Defense Technology // Government Affairs</div>
+    <h1>Congressional <span>Engagement</span> Tracker</h1>
+    <div class="tagline">// Tailored briefing documents for Hill engagements on defense AI</div>
+  </header>
+
+  <div class="section-label" style="margin-bottom:8px">Company pitch context</div>
+  <div class="ctx-block" style="margin-bottom:20px">
+    <textarea id="ctx" rows="4">Vannevar Labs builds agentic AI purpose-built to deter China and support Indo-Pacific operations. Our flagship product, Decrypt, is an OSINT and foreign language intelligence platform actively deployed with INDOPACOM, SOCOM, and AFSOC. We are seeking multi-year program funding through NDAA authorization and PPBE alignment. Key message: algorithmic-speed conflict requires AI tools trained on mission-relevant data, not commercial AI retrofitted for defense.</textarea>
+  </div>
+
+  <div class="section-label" style="margin-bottom:8px">Target office</div>
+  <div class="input-row">
+    <input type="text" id="member" placeholder="Member name or committee (e.g. SASC, Sen. Reed, Rep. Gallagher)" />
+    <select id="btype">
+      <option value="member">Member brief</option>
+      <option value="committee">Committee brief</option>
+      <option value="staffer">Staffer brief</option>
+    </select>
+  </div>
+
+  <div class="tags">
+    <button class="tag" onclick="pick('Senate Armed Services Committee')">SASC</button>
+    <button class="tag" onclick="pick('House Armed Services Committee')">HASC</button>
+    <button class="tag" onclick="pick('Senate Intelligence Committee')">SSCI</button>
+    <button class="tag" onclick="pick('House Intelligence Committee')">HPSCI</button>
+    <button class="tag" onclick="pick('Senate Appropriations Defense Subcommittee')">Approps Defense</button>
+    <button class="tag" onclick="pick('Sen. Jack Reed')">Reed</button>
+    <button class="tag" onclick="pick('Sen. Roger Wicker')">Wicker</button>
+    <button class="tag" onclick="pick('Sen. Mark Warner')">Warner</button>
+    <button class="tag" onclick="pick('Sen. Mike Rounds')">Rounds</button>
+    <button class="tag" onclick="pick('Rep. Mike Turner')">Turner</button>
+  </div>
+
+  <button class="gen-btn" id="gbtn" onclick="generate()">GENERATE ENGAGEMENT BRIEF</button>
+  <div id="output"><div class="status">Select a member or committee above and click generate.</div></div>
+
+  <footer>Built for defense technology government relations // Powered by Claude</footer>
+</div>
+
+<script>
+const KEY = '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';
+
+function pick(n) { document.getElementById('member').value = n; }
+
+async function generate() {
+  const member = document.getElementById('member').value.trim();
+  const btype = document.getElementById('btype').value;
+  const ctx = document.getElementById('ctx').value.trim();
+  const output = document.getElementById('output');
+  const btn = document.getElementById('gbtn');
+
+  if (!member) { output.innerHTML = '<div class="status error">Please enter a member or committee name.</div>'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'GENERATING...';
+  output.innerHTML = '<div class="status loading-dots">Researching and drafting your engagement brief</div>';
+
+  const sys = `You are a senior government affairs analyst at a defense AI company. Generate structured Congressional engagement briefs. Respond ONLY with valid JSON — no markdown fences, no preamble, no extra text.
+
+Return this exact structure:
+{"member":"string","role":"string","party":"D or R or N/A","relevance":"High or Medium or Low","relevance_reason":"string","priorities":["string","string","string"],"concerns":["string","string"],"message":"string","talking_points":["string","string","string"],"avoid":["string","string"],"ask":"string","questions":["string","string"]}`;
+
+  const usr = `Generate a ${btype} Congressional engagement brief for: ${member}\n\nCompany context: ${ctx}\n\nUse real knowledge of this member/committee's actual positions, committee roles, and stated priorities on defense, AI, and Indo-Pacific policy. Be specific and grounded.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1200,
+        system: sys,
+        messages: [{ role: 'user', content: usr }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `API error ${res.status}`);
+    }
+
+    const data = await res.json();
+    const raw = (data.content || []).map(b => b.text || '').join('').replace(/```json|```/g,'').trim();
+    const b = JSON.parse(raw);
+    renderBrief(b);
+  } catch(e) {
+    output.innerHTML = `<div class="status error">Error: ${e.message}</div>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'GENERATE ENGAGEMENT BRIEF';
+}
+
+function renderBrief(b) {
+  const pc = b.party === 'D' ? 'badge-d' : b.party === 'R' ? 'badge-r' : 'badge-lo';
+  const pLabel = b.party === 'D' ? 'Democrat' : b.party === 'R' ? 'Republican' : b.party;
+  const rc = b.relevance === 'High' ? 'badge-hi' : b.relevance === 'Medium' ? 'badge-mid' : 'badge-lo';
+  const li = arr => arr.map(x => `<li>${x}</li>`).join('');
+
+  document.getElementById('output').innerHTML = `
+    <div class="brief">
+      <div class="brief-header">
+        <div>
+          <div class="brief-name">${b.member}</div>
+          <div class="brief-role">${b.role}</div>
+        </div>
+        <div class="badges">
+          ${b.party !== 'N/A' ? `<span class="badge ${pc}">${pLabel}</span>` : ''}
+          <span class="badge ${rc}">${b.relevance} relevance</span>
+        </div>
+      </div>
+      <div class="brief-body">
+        <div class="brief-section"><div class="bslabel">Why this office matters</div><p>${b.relevance_reason}</p></div>
+        <div class="brief-section"><div class="bslabel">Their priorities</div><ul>${li(b.priorities)}</ul></div>
+        <div class="brief-section"><div class="bslabel">Anticipated concerns</div><ul>${li(b.concerns)}</ul></div>
+        <hr class="divider"/>
+        <div class="brief-section"><div class="bslabel">Tailored message</div><p>${b.message}</p></div>
+        <div class="brief-section"><div class="bslabel">Talking points</div><ul>${li(b.talking_points)}</ul></div>
+        <div class="brief-section"><div class="bslabel">Things to avoid</div><ul>${li(b.avoid)}</ul></div>
+        <hr class="divider"/>
+        <div class="brief-section"><div class="bslabel">Suggested ask</div><div class="ask-block"><p>${b.ask}</p></div></div>
+        <div class="brief-section" style="margin-top:24px"><div class="bslabel">Questions to ask them</div><ul>${li(b.questions)}</ul></div>
+      </div>
+    </div>`;
+}
+</script>
+</body>
+</html>
